@@ -28,7 +28,7 @@ class PipelineStage(ABC):
         for target_q in self.target_qs or []:
             print(f"{self.task_id}: sending {outp}")
             await target_q.put(outp)
-            self.input_q.task_done()
+        self.input_q.task_done()
 
     async def __call__(self, param: Any) -> Any:
         """

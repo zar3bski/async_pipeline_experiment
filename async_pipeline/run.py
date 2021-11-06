@@ -4,25 +4,24 @@ from os import listdir, path
 from async_pipeline import tasks
 from async_pipeline.extractor import Extractor
 from async_pipeline.transformer import Transformer
-from async_pipeline.loader import load
+from async_pipeline.loader import Loader
 
 
 async def main():
     # dumbest conf ever: which function to use for each stage
     # easily scalable
-    conf = {"extract": "read_file", "transform": "i2a"}
+    conf = {"extract": "read_file", "transform": "i2a", "load": "print"}
     to_read = asyncio.Queue()
     to_transform = asyncio.Queue()
     to_load = asyncio.Queue()
 
     extractor = Extractor(conf, to_read, [to_transform])
     transformer = Transformer(conf, to_transform, [to_load])
+    loader = Loader(conf, to_load, [])
 
     asyncio.create_task(extractor("some extractor parameter"))
     asyncio.create_task(transformer("some paramaters for the transformer"))
-
-    load_task = load(to_load, [], "load", "")
-    asyncio.create_task(load_task)
+    asyncio.create_task(loader("some loader parameter"))
 
     start_time = time.time()
 
