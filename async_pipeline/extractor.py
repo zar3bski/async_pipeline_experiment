@@ -1,4 +1,5 @@
 import asyncio
+import random
 import aiofiles
 from async_pipeline.stage import PipelineStage
 from asyncio.queues import Queue
@@ -16,7 +17,7 @@ class Extractor(PipelineStage):
 
     async def read_file(self, inpt):
         print(f"{self.task_id}: Recieved input: {inpt}")
-        await asyncio.sleep(1)  # simulated IO delay
+        await asyncio.sleep(random.randint(1, 5))  # simulated IO delay
         async with aiofiles.open(inpt, mode="r") as f:
             outp: str = await f.read()
         await self.send_objects_to_target_queues(outp)

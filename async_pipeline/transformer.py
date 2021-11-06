@@ -1,4 +1,6 @@
 import asyncio
+
+import random
 from asyncio.queues import Queue
 from async_pipeline.stage import PipelineStage
 from async_pipeline import tasks
@@ -13,6 +15,6 @@ class Transformer(PipelineStage):
 
     async def i2a(self, message: str):
         print(f"{self.task_id}: Recieved input: {message}")
-        await asyncio.sleep(1)  # simulated IO delay
+        await asyncio.sleep(random.randint(1, 2))  # simulated IO delay
         outp = message.replace("i", "a")
         await self.send_objects_to_target_queues(outp)
