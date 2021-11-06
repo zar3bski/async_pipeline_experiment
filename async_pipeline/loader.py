@@ -5,8 +5,6 @@ from async_pipeline.stage import PipelineStage
 
 
 class Loader(PipelineStage):
-    task_id: str = "load"
-
     def __init__(self, conf, *args, **kwargs) -> None:
         self._operation = conf["load"]
         super().__init__(*args, **kwargs)

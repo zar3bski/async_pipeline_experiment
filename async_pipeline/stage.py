@@ -14,8 +14,11 @@ class PipelineStage(ABC):
 
     target_qs: list
     input_q: Queue
-    task_id: str
     _operation: str
+
+    @property
+    def stage_name(self) -> str:
+        return f"{self.__class__.__name__}"
 
     def __init__(self, input_q: Queue, target_qs: list) -> None:
         self.input_q = input_q
@@ -26,7 +29,7 @@ class PipelineStage(ABC):
         Send processed data to the stage's target queues from
         """
         for target_q in self.target_qs or []:
-            print(f"{self.task_id}: sending {outp}")
+            print(f"{self.stage_name}: sending {outp}")
             await target_q.put(outp)
         self.input_q.task_done()
 
@@ -34,12 +37,12 @@ class PipelineStage(ABC):
         """
         Pipeline stage execution
         """
-        print(f"{self.task_id}: Initialised with param: {param}")
+        print(f"{self.stage_name}: Initialised with param: {param}")
 
         while True:
             inpt = await self.input_q.get()
             print(
-                f"{self.task_id}: Creating task with {self.task_id}_inner, input {inpt}."
+                f"{self.stage_name}: Creating task with {self.stage_name}_inner, input {inpt}."
             )
             operation = getattr(self, self._operation)
             tasks.append(asyncio.create_task(operation(inpt)))
