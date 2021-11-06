@@ -16,5 +16,5 @@ async def load(input_q, target_qs, task_id, param):
 
     while True:
         inpt = await input_q.get()
-        print(f'{task_id}: Creating task with {task_id}_inner, input {inpt}.')
+        print(f"{task_id}: Creating task with {task_id}_inner, input {inpt}.")
         tasks.append(asyncio.create_task(func_inner(input_q, target_qs, inpt)))
