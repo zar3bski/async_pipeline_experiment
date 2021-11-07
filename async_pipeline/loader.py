@@ -1,7 +1,7 @@
 from async_pipeline import tasks
 import asyncio
 
-from async_pipeline.stage import PipelineStage
+from async_pipeline.stage import PipelineStage, pipeline_operation
 
 
 class Loader(PipelineStage):
@@ -9,10 +9,11 @@ class Loader(PipelineStage):
         self._operation = conf["load"]
         super().__init__(*args, **kwargs)
 
+    @pipeline_operation
     async def print(self, message: str):
         print(
             f"""
         got {message} from god knows where
         """
         )
-        await self.send_objects_to_target_queues(None)
+        return None

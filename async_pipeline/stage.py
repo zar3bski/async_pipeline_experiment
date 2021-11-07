@@ -3,6 +3,7 @@ from asyncio.queues import Queue
 from typing import Any
 from async_pipeline import tasks
 import asyncio
+import functools
 
 
 class PipelineStage(ABC):
@@ -24,9 +25,9 @@ class PipelineStage(ABC):
         self.input_q = input_q
         self.target_qs = target_qs
 
-    async def send_objects_to_target_queues(self, outp):
+    async def _send_objects_to_target_queues(self, outp):
         """
-        Send processed data to the stage's target queues from
+        Send processed data to the stage's target queues
         """
         for target_q in self.target_qs or []:
             print(f"{self.stage_name}: sending {outp}")
@@ -46,3 +47,23 @@ class PipelineStage(ABC):
             )
             operation = getattr(self, self._operation)
             tasks.append(asyncio.create_task(operation(inpt)))
+
+
+def pipeline_operation(func):
+    """
+    Decorator for PipelineStage methods. Log inputs and send returned output
+    the stage's output queues
+
+    usage:
+        @pipeline_operation\n
+        async def your_pipeline_stage_method():\n
+            return what_to_add_to_append_to_target_queues
+    """
+
+    @functools.wraps(func)
+    async def wrapper_pipeline_operation(self: PipelineStage, inpt, *args, **kwargs):
+        print(f"{self.stage_name}: Recieved input: {str(inpt)}")
+        out = await func(self, inpt, *args, **kwargs)
+        await self._send_objects_to_target_queues(out)
+
+    return wrapper_pipeline_operation
