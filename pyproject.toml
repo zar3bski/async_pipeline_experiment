@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "async_pipeline"
+version = "0.1.0"
+description = ""
+authors = ["zar3bski <zarebskidavid@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.7.1"
+aiofiles = "^0.7.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+isort = "^5.10.0"
+black = "^21.10b0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
