@@ -33,7 +33,7 @@ class PipelineStage(ABC):
         Send processed data to the stage's target queues
         """
         for target_q in self.target_qs or []:
-            logger.debug(f"{self.stage_name}: sending {outp}")
+            logger.debug(f"{self.stage_name}: sending {str(outp)}")
             await target_q.put(outp)
         self.input_q.task_done()
 
@@ -46,7 +46,7 @@ class PipelineStage(ABC):
         while True:
             inpt = await self.input_q.get()
             logger.debug(
-                f"{self.stage_name}: Creating task with {self.stage_name}_inner, input {inpt}."
+                f"{self.stage_name}: Creating task with {self.stage_name}_inner, input {str(inpt)}."
             )
             operation = getattr(self, self._operation)
             tasks.append(asyncio.create_task(operation(inpt)))
@@ -65,7 +65,7 @@ def pipeline_operation(func):
 
     @functools.wraps(func)
     async def wrapper_pipeline_operation(self: PipelineStage, inpt, *args, **kwargs):
-        logger.debug(f"{self.stage_name}: Recieved input: {str(inpt)}")
+        logger.debug(f"{self.stage_name}: recieved input: {str(inpt)}")
         out = await func(self, inpt, *args, **kwargs)
         await self._send_objects_to_target_queues(out)
 
