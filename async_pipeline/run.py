@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 from os import listdir, path
 from async_pipeline import tasks
@@ -8,6 +9,7 @@ from async_pipeline.loader import Loader
 
 
 async def main():
+    logging.basicConfig(level=logging.DEBUG)
     # dumbest conf ever: which function to use for each stage
     # easily scalable
     conf = {"extract": "read_file", "transform": "i2a", "load": "print"}

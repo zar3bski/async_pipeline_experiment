@@ -1,9 +1,12 @@
+import logging
 from abc import ABC, abstractmethod
 from asyncio.queues import Queue
 from typing import Any
 from async_pipeline import tasks
 import asyncio
 import functools
+
+logger = logging.getLogger(__name__)
 
 
 class PipelineStage(ABC):
@@ -30,7 +33,7 @@ class PipelineStage(ABC):
         Send processed data to the stage's target queues
         """
         for target_q in self.target_qs or []:
-            print(f"{self.stage_name}: sending {outp}")
+            logger.debug(f"{self.stage_name}: sending {outp}")
             await target_q.put(outp)
         self.input_q.task_done()
 
@@ -38,11 +41,11 @@ class PipelineStage(ABC):
         """
         Pipeline stage execution
         """
-        print(f"{self.stage_name}: Initialised with param: {param}")
+        logger.info(f"{self.stage_name}: Initialised with param: {param}")
 
         while True:
             inpt = await self.input_q.get()
-            print(
+            logger.debug(
                 f"{self.stage_name}: Creating task with {self.stage_name}_inner, input {inpt}."
             )
             operation = getattr(self, self._operation)
@@ -62,7 +65,7 @@ def pipeline_operation(func):
 
     @functools.wraps(func)
     async def wrapper_pipeline_operation(self: PipelineStage, inpt, *args, **kwargs):
-        print(f"{self.stage_name}: Recieved input: {str(inpt)}")
+        logger.debug(f"{self.stage_name}: Recieved input: {str(inpt)}")
         out = await func(self, inpt, *args, **kwargs)
         await self._send_objects_to_target_queues(out)
 
