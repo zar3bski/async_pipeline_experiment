@@ -45,7 +45,9 @@ class PipelineStage(ABC):
 
         while True:
             inpt = await self.input_q.get()
-            logger.debug(f"{self.stage_name}: Creating task with {self.stage_name}_inner, input {str(inpt)}.")
+            logger.debug(
+                f"{self.stage_name}: Creating task with {self.stage_name}_inner, input {str(inpt)}."
+            )
             operation = getattr(self, self._operation)
             tasks.append(asyncio.create_task(operation(inpt)))
 
