@@ -1,4 +1,3 @@
-from async_pipeline import tasks
 import asyncio
 
 from async_pipeline.stage import PipelineStage, pipeline_operation

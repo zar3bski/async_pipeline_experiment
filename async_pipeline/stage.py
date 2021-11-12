@@ -2,7 +2,6 @@ import logging
 from abc import ABC
 from asyncio.queues import Queue
 from typing import Any
-from async_pipeline import tasks
 import asyncio
 import functools
 

@@ -3,8 +3,6 @@ import random
 import aiofiles
 from async_pipeline.stage import PipelineStage, pipeline_operation
 from asyncio.queues import Queue
-from async_pipeline import tasks
-
 
 class Extractor(PipelineStage):
     def __init__(self, conf, *args, **kwargs) -> None:

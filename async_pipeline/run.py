@@ -2,7 +2,6 @@ import asyncio
 import logging
 import time
 from os import listdir, path
-from async_pipeline import tasks
 from async_pipeline.extractor import Extractor
 from async_pipeline.transformer import Transformer
 from async_pipeline.loader import Loader
