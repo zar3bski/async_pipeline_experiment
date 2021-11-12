@@ -10,10 +10,5 @@ class Loader(PipelineStage):
         super().__init__(*args, **kwargs)
 
     @pipeline_operation
-    async def print(self, message: str):
-        print(
-            f"""
-        got {message} from god knows where
-        """
-        )
-        return None
+    async def print(self, message):
+        print(f"[FINAL OUT] got {message} from god knows where")

@@ -18,12 +18,8 @@ async def main():
     to_load = asyncio.Queue()
 
     extractor = Extractor(conf, to_read, [to_transform])
-    transformer = Transformer(conf, to_transform, [to_load])
+    transformer = Transformer(conf, to_transform, [to_load], worker_nb=2)
     loader = Loader(conf, to_load, [])
-
-    asyncio.create_task(extractor("some extractor parameter"))
-    asyncio.create_task(transformer("some paramaters for the transformer"))
-    asyncio.create_task(loader("some loader parameter"))
 
     start_time = time.time()
 
@@ -34,7 +30,10 @@ async def main():
     await to_transform.join()
     await to_load.join()
 
-    await asyncio.gather(*tasks)
+    del extractor
+    del transformer
+    del loader
+    
     print(f"Duration: {time.time() - start_time}")
 
 

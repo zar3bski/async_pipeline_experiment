@@ -12,6 +12,8 @@ class Transformer(PipelineStage):
         super().__init__(*args, **kwargs)
 
     @pipeline_operation
-    async def i2a(self, message: str):
-        await asyncio.sleep(random.randint(1, 2))  # simulated IO delay
-        return message.replace("i", "a")
+    async def i2a(self, inpt):
+        await asyncio.sleep(random.randint(1, 5))  # simulated IO delay
+        outp = inpt.replace("\n", " ").replace("i", "a") + "some_padding string"
+        return outp
+
