@@ -4,6 +4,7 @@ import aiofiles
 from async_pipeline.stage import PipelineStage, pipeline_operation
 from asyncio.queues import Queue
 
+
 class Extractor(PipelineStage):
     def __init__(self, conf, *args, **kwargs) -> None:
         self._operation = conf["extract"]

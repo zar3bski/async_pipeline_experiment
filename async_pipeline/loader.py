@@ -10,4 +10,4 @@ class Loader(PipelineStage):
 
     @pipeline_operation
     async def print(self, message):
-        print(f"[FINAL OUT] got {message} from god knows where")
+        print(f"[FINAL OUT]: {message}")

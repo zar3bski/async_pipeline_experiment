@@ -1,7 +1,7 @@
 import logging
 from abc import ABC
 from asyncio.queues import Queue
-from typing import Any
+from typing import Any, Generator
 import asyncio
 import functools
 
@@ -23,33 +23,48 @@ class PipelineStage(ABC):
     def stage_name(self) -> str:
         return f"{self.__class__.__name__}"
 
-    def __init__(self, input_q: Queue, target_qs: list, worker_nb:int=1) -> None:
+    def __init__(self, input_q: Queue, target_qs: list, worker_nb: int = 1) -> None:
         self.input_q = input_q
         self.target_qs = target_qs
-        self.tasks = [asyncio.create_task(self._perform_tasks(i)) for i in range(worker_nb)]
-    
+        self.tasks = [
+            asyncio.create_task(self._perform_tasks(i)) for i in range(worker_nb)
+        ]
+
     def __del__(self):
-        for task in self.tasks: 
+        for task in self.tasks:
             task.cancel()
             logger.info(f"{self.stage_name}: deleting worker")
 
     async def _send_objects_to_target_queues(self, outp: Any):
         """
         Send processed data to stage's target queues
+        Input: Any item or list/generator of items (which will be looped through)
         """
 
-        logger.debug(f"[OUT]{self.stage_name}: {repr(outp)}")
-        for target_q in self.target_qs or []:
-            target_q.put_nowait(outp)
+        def _send_target(item):
+            for target_q in self.target_qs or []:
+                target_q.put_nowait(item)
+                logger.debug(
+                    f"{self.stage_name}=OUT=>[{id(target_q)}:{target_q.qsize()}]"
+                )
 
-    async def _perform_tasks(self, worker_id:int): 
+        if isinstance(outp, list) or isinstance(outp, Generator):
+            for item in outp:
+                _send_target(item)
+        else:
+            _send_target(outp)
+
+    async def _perform_tasks(self, worker_id: int):
         logger.info(f"{self.stage_name} worker {worker_id}: initialized")
         while True:
             input = await self.input_q.get()
-            logger.debug(f"[IN] {self.stage_name} worker {worker_id}: {str(input)}")
+            logger.debug(
+                f"[{id(self.input_q)}:{self.input_q.qsize()}]=IN=>{self.stage_name} worker {worker_id}: {str(input)}"
+            )
             operation = getattr(self, self._operation)
             await operation(input)
             self.input_q.task_done()
+
 
 def pipeline_operation(func):
     """
@@ -63,9 +78,7 @@ def pipeline_operation(func):
     """
 
     @functools.wraps(func)
-    async def wrapper_pipeline_operation(
-        self: PipelineStage, input, *args, **kwargs
-    ):
+    async def wrapper_pipeline_operation(self: PipelineStage, input, *args, **kwargs):
         out = await func(self, input, *args, **kwargs)
         if isinstance(out, Exception):
             logger.warning(f"{self.stage_name}: exception {str(out)}")
