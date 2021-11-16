@@ -25,6 +25,8 @@ async def main():
     for filename in listdir("tests/data/set_1"):
         await to_read.put(f"tests/data/set_1/{filename}")
 
+    await to_read.put("some/non/existent/path") # error simulation
+
     await to_read.join()
     await to_transform.join()
     await to_load.join()

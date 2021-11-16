@@ -62,7 +62,10 @@ class PipelineStage(ABC):
                 f"[{id(self.input_q)}:{self.input_q.qsize()}]=IN=>{self.stage_name} worker {worker_id}: {str(input)}"
             )
             operation = getattr(self, self._operation)
-            await operation(input)
+            try:
+                await operation(input)
+            except Exception as e: 
+                logger.error(f"[{id(self.input_q)}:{self.input_q.qsize()}]=IN=>{self.stage_name} worker {worker_id}: {e}")
             self.input_q.task_done()
 
 
