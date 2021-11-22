@@ -2,8 +2,8 @@ import asyncio
 
 import random
 from asyncio.queues import Queue
+from typing import Generator
 from async_pipeline.stage import PipelineStage, pipeline_operation
-from async_pipeline import tasks
 
 
 class Transformer(PipelineStage):
@@ -12,6 +12,9 @@ class Transformer(PipelineStage):
         super().__init__(*args, **kwargs)
 
     @pipeline_operation
-    async def i2a(self, message: str):
-        await asyncio.sleep(random.randint(1, 2))  # simulated IO delay
-        return message.replace("i", "a")
+    async def i2a(self, inpt) -> Generator:
+        await asyncio.sleep(random.randint(1, 5))  # simulated IO delay
+        return (
+            line.replace("i", "I").replace("a", "A") + " some_padding"
+            for line in inpt.split("\n")
+        )

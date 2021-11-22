@@ -2,7 +2,6 @@ import asyncio
 import logging
 import time
 from os import listdir, path
-from async_pipeline import tasks
 from async_pipeline.extractor import Extractor
 from async_pipeline.transformer import Transformer
 from async_pipeline.loader import Loader
@@ -17,24 +16,25 @@ async def main():
     to_transform = asyncio.Queue()
     to_load = asyncio.Queue()
 
-    extractor = Extractor(conf, to_read, [to_transform])
-    transformer = Transformer(conf, to_transform, [to_load])
-    loader = Loader(conf, to_load, [])
-
-    asyncio.create_task(extractor("some extractor parameter"))
-    asyncio.create_task(transformer("some paramaters for the transformer"))
-    asyncio.create_task(loader("some loader parameter"))
+    extractor = Extractor(conf, to_read, [to_transform], worker_nb=2)
+    transformer = Transformer(conf, to_transform, [to_load], worker_nb=3)
+    loader = Loader(conf, to_load, [], worker_nb=2)
 
     start_time = time.time()
 
     for filename in listdir("tests/data/set_1"):
         await to_read.put(f"tests/data/set_1/{filename}")
 
+    await to_read.put("some/non/existent/path") # error simulation
+
     await to_read.join()
     await to_transform.join()
     await to_load.join()
 
-    await asyncio.gather(*tasks)
+    del extractor
+    del transformer
+    del loader
+
     print(f"Duration: {time.time() - start_time}")
 
 

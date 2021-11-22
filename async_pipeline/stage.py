@@ -1,8 +1,7 @@
 import logging
 from abc import ABC
 from asyncio.queues import Queue
-from typing import Any
-from async_pipeline import tasks
+from typing import Any, Generator
 import asyncio
 import functools
 
@@ -24,32 +23,50 @@ class PipelineStage(ABC):
     def stage_name(self) -> str:
         return f"{self.__class__.__name__}"
 
-    def __init__(self, input_q: Queue, target_qs: list) -> None:
+    def __init__(self, input_q: Queue, target_qs: list, worker_nb: int = 1) -> None:
         self.input_q = input_q
         self.target_qs = target_qs
+        self.tasks = [
+            asyncio.create_task(self._perform_tasks(i)) for i in range(worker_nb)
+        ]
+
+    def __del__(self):
+        for task in self.tasks:
+            task.cancel()
+            logger.info(f"{self.stage_name}: deleting worker")
 
     async def _send_objects_to_target_queues(self, outp: Any):
         """
         Send processed data to stage's target queues
+        Input: Any item or list/generator of items (which will be looped through)
         """
 
-        for target_q in self.target_qs or []:
-            logger.debug(f"{self.stage_name}: sending {repr(outp)}")
-            await target_q.put(outp)
+        def _send_target(item):
+            for target_q in self.target_qs or []:
+                target_q.put_nowait(item)
+                logger.debug(
+                    f"{self.stage_name}=OUT=>[{id(target_q)}:{target_q.qsize()}]"
+                )
 
-    async def __call__(self, param: Any) -> Any:
-        """
-        Pipeline stage execution
-        """
-        logger.info(f"{self.stage_name}: Initialised with param: {param}")
+        if isinstance(outp, list) or isinstance(outp, Generator):
+            for item in outp:
+                _send_target(item)
+        else:
+            _send_target(outp)
 
+    async def _perform_tasks(self, worker_id: int):
+        logger.info(f"{self.stage_name} worker {worker_id}: initialized")
         while True:
-            inpt = await self.input_q.get()
+            input = await self.input_q.get()
             logger.debug(
-                f"{self.stage_name}: Creating task with {self.stage_name}_inner, input {str(inpt)}."
+                f"[{id(self.input_q)}:{self.input_q.qsize()}]=IN=>{self.stage_name} worker {worker_id}: {str(input)}"
             )
             operation = getattr(self, self._operation)
-            tasks.append(asyncio.create_task(operation(inpt)))
+            try:
+                await operation(input)
+            except Exception as e: 
+                logger.error(f"[{id(self.input_q)}:{self.input_q.qsize()}]=IN=>{self.stage_name} worker {worker_id}: {e}")
+            self.input_q.task_done()
 
 
 def pipeline_operation(func):
@@ -64,13 +81,11 @@ def pipeline_operation(func):
     """
 
     @functools.wraps(func)
-    async def wrapper_pipeline_operation(self: PipelineStage, inpt, *args, **kwargs):
-        logger.debug(f"{self.stage_name}: recieved input: {str(inpt)}")
-        out = await func(self, inpt, *args, **kwargs)
+    async def wrapper_pipeline_operation(self: PipelineStage, input, *args, **kwargs):
+        out = await func(self, input, *args, **kwargs)
         if isinstance(out, Exception):
             logger.warning(f"{self.stage_name}: exception {str(out)}")
         else:
             await self._send_objects_to_target_queues(out)
-        self.input_q.task_done()
 
     return wrapper_pipeline_operation

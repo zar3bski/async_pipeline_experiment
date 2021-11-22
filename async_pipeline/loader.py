@@ -1,5 +1,5 @@
-from async_pipeline import tasks
 import asyncio
+import random
 
 from async_pipeline.stage import PipelineStage, pipeline_operation
 
@@ -10,10 +10,6 @@ class Loader(PipelineStage):
         super().__init__(*args, **kwargs)
 
     @pipeline_operation
-    async def print(self, message: str):
-        print(
-            f"""
-        got {message} from god knows where
-        """
-        )
-        return None
+    async def print(self, message):
+        print(f"[FINAL OUT]: {message}")
+        await asyncio.sleep(random.randint(1, 5))  # simulated IO delay
